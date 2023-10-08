@@ -22,19 +22,16 @@ else:
 def send_email(contact_id):
     contact = Contact.objects(id=contact_id).first()
     if contact:
-        # Тут можна імітувати логіку надсилання електронного листа
         print(f"Відправлено листа до {contact.email}")
-        time.sleep(2)  # Імітація тривалості відправлення
+        time.sleep(2)
         contact.message_sent = True
         contact.save()
 
 
-# Параметри підключення до RabbitMQ
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 channel.queue_declare(queue='contact_queue')
 
-# Функція для обробки повідомлень з черги
 
 
 def callback(ch, method, properties, body):
@@ -42,10 +39,8 @@ def callback(ch, method, properties, body):
     send_email(contact_id)
 
 
-# Встановлення функції обробки для черги
 channel.basic_consume(queue='contact_queue',
                       on_message_callback=callback, auto_ack=True)
 
-# Очікування повідомлень з черги
 print('Чекаю на повідомлення. Для виходу натисніть Ctrl+C')
 channel.start_consuming()
