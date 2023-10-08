@@ -9,11 +9,7 @@ from connection import db, connect
 import platform
 is_windows = platform.system() == "Windows"
 
-client = None
-redis_client = None
-
-if is_windows:
-    
+if is_windows: 
     client = docker.DockerClient(base_url='tcp://localhost:2375')
     client.containers.run(
         'redis:latest', name='my-redis-container', detach=True, ports={'6379/tcp': 6379})
@@ -34,38 +30,34 @@ else:
     redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 
-def search_quotes_by_author(author_name):
-    cached_result = redis_client.get(f"author:{author_name}")
-    if cached_result:
-        return cached_result.decode('utf-8')
-
-    author = Author.objects(fullname=author_name).first()
-    if author:
-        quotes = Quote.objects(author=author)
-        result = "\n".join(
-            [f"Цитата: {quote.quote}\nАвтор: {quote.author.fullname}\nТеги: {', '.join(quote.tags)}" for quote in quotes])
-        redis_client.setex(f"author:{author_name}", 3600, result)
-        return result
+def search_by_name(name):
+    regex = re.compile(f"^{name}.*", re.IGNORECASE)
+    authors = Author.objects(fullname=regex)
+    if authors:
+        results = []
+        for author in authors:
+            quotes = Quote.objects(author=author)
+            author_quotes = [
+                f"Цитата: {quote.quote}\nАвтор: {quote.author.fullname}\nТеги: {', '.join(quote.tags)}"
+                for quote in quotes
+            ]
+            results.extend(author_quotes)
+        return "\n".join(results)
     else:
         return "Автор не знайдений"
 
 
-def search_quotes_by_tag(tag):
-    cached_result = redis_client.get(f"tag:{tag}")
-    if cached_result:
-        return cached_result.decode('utf-8')
-
-    quotes = Quote.objects(tags=tag)
-    result = "\n".join(
-        [f"Цитата: {quote.quote}\nАвтор: {quote.author.fullname}\nТеги: {', '.join(quote.tags)}" for quote in quotes])
-    redis_client.setex(f"tag:{tag}", 3600, result)
-    return result
-
-
-def search_quotes_by_tags(tags):
-    tags = tags.split(',')
-    quotes = Quote.objects(tags__in=tags)
-    return quotes
+def search_by_tag(tag):
+    regex = re.compile(f"^{tag}.*", re.IGNORECASE)
+    quotes = Quote.objects(tags__in=[regex])
+    if quotes:
+        results = [
+            f"Цитата: {quote.quote}\nАвтор: {quote.author.fullname}\nТеги: {', '.join(quote.tags)}"
+            for quote in quotes
+        ]
+        return "\n".join(results)
+    else:
+        return "Цитати не знайдені"
 
 
 def main():
@@ -76,17 +68,29 @@ def main():
         if match:
             option, value = match.groups()
             if option == "name":
-                result = search_quotes_by_author(value)
+                short_name_match = re.match(r"^(\w{2,})", value)
+                if short_name_match:
+                    name = short_name_match.group(1)
+                    result = search_by_name(name)
+                else:
+                    pass
             elif option == "tag":
-                result = search_quotes_by_tag(value)
+                short_tag_match = re.match(r"^(\w{2,})", value)
+                if short_tag_match:
+                    tag = short_tag_match.group(1)
+                    result = search_by_tag(tag)
+                else:
+                    pass
             print(result)
         elif command == "exit":
+            container = client.containers.get('my-redis-container')
+            container.stop()
+            container.remove()
             client.close()
             break
         else:
             print("Невідома команда")
             continue
-
 
 if __name__ == "__main__":
     main()
