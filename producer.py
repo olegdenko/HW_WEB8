@@ -1,5 +1,5 @@
 import pika
-import subprocess
+import time
 import docker
 from faker import Faker
 from models import Contact
@@ -8,6 +8,7 @@ from connection import connect
 num_fake_contacts = 10
 
 client = docker.from_env()
+time.sleep(2)
 existing_containers = client.containers.list(
     all=True, filters={"name": "rabbitmq"})
 
@@ -46,7 +47,7 @@ for contact in Contact.objects(message_sent=False):
         routing_key='contact_queue',
         body=str(contact.id)
     )
-    contact.message_sent = True
+    contact.message_sent = False
     contact.save()
 
 connection.close()

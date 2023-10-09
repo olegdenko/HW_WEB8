@@ -21,7 +21,9 @@ else:
 
 def send_email(contact_id):
     contact = Contact.objects(id=contact_id).first()
-    if contact:
+    sended = contact.message_sent
+    print(sended)
+    if contact and sended == False:
         print(f"Відправлено листа до {contact.email}")
         time.sleep(2)
         contact.message_sent = True
