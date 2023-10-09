@@ -35,3 +35,4 @@ for quote_data in quotes_data:
         print(f"Author '{author_name}' not found!")
 
 client.close()
+print("Uploaded")

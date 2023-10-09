@@ -9,7 +9,7 @@ from connection import connect
 num_fake_contacts = 10
 
 client = docker.from_env()
-time.sleep(3)
+time.sleep(4)
 existing_containers = client.containers.list(
     all=True, filters={"name": "rabbitmq"})
 
@@ -53,3 +53,4 @@ for contact in Contact.objects(message_sent=False):
     contact.save()
 
 connection.close()
+print("Database was update.")
