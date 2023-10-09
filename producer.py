@@ -9,7 +9,7 @@ from connection import connect
 num_fake_contacts = 10
 
 client = docker.from_env()
-time.sleep(2)
+time.sleep(5)
 existing_containers = client.containers.list(
     all=True, filters={"name": "rabbitmq"})
 

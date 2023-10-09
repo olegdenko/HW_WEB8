@@ -1,7 +1,10 @@
 import docker
 import pika
-import time
+import threading
+
 from models import Contact, StringField, EmailField, BooleanField
+from consumer_email import send_email
+from consumer_sms import send_sms
 from connection import connect
 
 client = docker.from_env()
@@ -19,26 +22,23 @@ else:
     print("Контейнер 'rabbitmq' вже запущений.")
 
 
-def send_email(contact_id):
-    contact = Contact.objects(id=contact_id).first()
-    sended = contact.message_sent
-    print(sended)
-    if contact and sended == False:
-        print(f"Відправлено листа до {contact.email}")
-        time.sleep(2)
-        contact.message_sent = True
-        contact.save()
-
-
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 channel.queue_declare(queue='contact_queue')
 
 
-
 def callback(ch, method, properties, body):
     contact_id = body.decode('utf-8')
-    send_email(contact_id)
+    contact = Contact.objects(id=contact_id).first()
+
+    if contact:
+        if contact.best_contact_method == "SMS":
+            send_sms(contact_id)
+        elif contact.best_contact_method == "Email":
+            send_email(contact_id)
+
+        contact.message_sent = True
+        contact.save()
 
 
 channel.basic_consume(queue='contact_queue',
