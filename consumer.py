@@ -1,13 +1,14 @@
-import docker
 import pika
-import threading
+import time
+import docker
 
-from models import Contact, StringField, EmailField, BooleanField
+from models import Contact
 from consumer_email import send_email
 from consumer_sms import send_sms
 from connection import connect
 
 client = docker.from_env()
+time.sleep(4)
 existing_containers = client.containers.list(
     all=True, filters={"name": "rabbitmq"})
 
@@ -20,11 +21,6 @@ if not existing_containers:
     )
 else:
     print("Контейнер 'rabbitmq' вже запущений.")
-
-
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
-channel.queue_declare(queue='contact_queue')
 
 
 def callback(ch, method, properties, body):
@@ -41,8 +37,11 @@ def callback(ch, method, properties, body):
         contact.save()
 
 
-channel.basic_consume(queue='contact_queue',
-                      on_message_callback=callback, auto_ack=True)
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+# channel.queue_declare(queue='contact_queue')
+
+channel.basic_consume(queue='contact_queue', on_message_callback=callback, auto_ack=True)
 
 print('Чекаю на повідомлення. Для виходу натисніть Ctrl+C')
 channel.start_consuming()
