@@ -1,5 +1,6 @@
 import pika
 import time
+import random
 import docker
 from faker import Faker
 from models import Contact
@@ -24,12 +25,15 @@ else:
 
 # subprocess.Popen("rabbitmq-server", shell=True)
 
+
 def create_fake_contacts(num_contacts):
     fake = Faker()
     for _ in range(num_contacts):
         contact = Contact(
             full_name=fake.name(),
-            email=fake.email()
+            email=fake.email(),
+            phone_number=f"+1-{random.randint(100, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+            best_contact_method=random.choice(["SMS", "Email"])
         )
         contact.save()
 
