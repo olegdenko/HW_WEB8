@@ -15,7 +15,4 @@ connect(
 
 
 if __name__ == "__main__":
-    results = db.cats.find_one
-    print(results)
-    for result in results:
-        print(str(result))
+    print("Connection MongoDB")

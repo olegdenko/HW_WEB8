@@ -1,7 +1,7 @@
 import json
 from models import Author, Quote
 from bson import ObjectId
-from connection import client, db, connect
+from connection import connect, client
 
 
 with open('authors.json', 'r', encoding='utf-8') as file:

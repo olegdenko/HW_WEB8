@@ -2,7 +2,7 @@ import pika
 import time
 import docker
 
-from models import Contact
+from models_contact import Contact
 from consumer_email import send_email
 from consumer_sms import send_sms
 from connection import connect

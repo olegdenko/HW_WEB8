@@ -3,7 +3,7 @@ import time
 import random
 import docker
 from faker import Faker
-from models import Contact
+from models_contact import Contact
 from connection import connect
 
 num_fake_contacts = 10

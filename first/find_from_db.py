@@ -4,12 +4,12 @@ import redis
 import time
 
 from models import Author, Quote
-from connection import db, connect
+from connection import connect, client
 
 import platform
 is_windows = platform.system() == "Windows"
 
-if is_windows: 
+if is_windows:
     client = docker.DockerClient(base_url='tcp://localhost:2375')
     client.containers.run(
         'redis:latest', name='my-redis-container', detach=True, ports={'6379/tcp': 6379})
@@ -17,6 +17,7 @@ if is_windows:
 else:
     def start_redis_container():
         client = docker.from_env()
+        time.sleep(4)
         try:
             container = client.containers.get('my-redis-container')
             if container.status != 'running':
@@ -24,7 +25,6 @@ else:
         except docker.errors.NotFound:
             client.containers.run(
                 'redis:latest', name='my-redis-container', detach=True, ports={'6379/tcp': 6379})
-            time.sleep(2)
 
     start_redis_container()
     redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
